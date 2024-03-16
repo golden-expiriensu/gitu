@@ -87,6 +87,11 @@ pub(crate) fn create(config: Rc<Config>, repo: Rc<Repository>, size: Rect) -> Re
                 "Staged changes",
                 &git::diff_staged(repo.as_ref())?,
             ))
+            .chain(create_stash_list_section_items(
+                Rc::clone(&config),
+                repo.as_ref(),
+                "Stashes",
+            ))
             .chain(create_log_section_items(
                 Rc::clone(&config),
                 repo.as_ref(),
@@ -247,6 +252,31 @@ fn create_status_section_items<'a>(
     }
     .into_iter()
     .chain(items::create_diff_items(config, diff, &1, true))
+}
+
+fn create_stash_list_section_items<'a>(
+    config: Rc<Config>,
+    repo: &Repository,
+    header: &str,
+) -> impl Iterator<Item = Item> + 'a {
+    let style = &config.style;
+    [
+        Item {
+            display: Line::raw(""),
+            depth: 0,
+            unselectable: true,
+            ..Default::default()
+        },
+        Item {
+            id: header.to_string().into(),
+            display: Line::styled(header.to_string(), &style.section_header),
+            section: true,
+            depth: 0,
+            ..Default::default()
+        },
+    ]
+    .into_iter()
+    .chain(items::stash_list(&config, repo, 10).unwrap())
 }
 
 fn create_log_section_items<'a>(
